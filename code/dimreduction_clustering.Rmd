@@ -6,7 +6,7 @@ output: html_document
 
 ### Essential packages
 
-```{r}
+```{r,warning = FALSE}
 library(plyr)
 library(reshape2)
 library(ManiNetCluster)
@@ -120,7 +120,7 @@ colnames(group_ref) = factor(paste0("Cluster",1:5),levels = paste0("Cluster",1:5
 for (i in 1:n){
   group_ref[NMA_res_e[i,]$ttype,gmm_cluster[i]] = group_ref[NMA_res_e[i,]$ttype,gmm_cluster[i]] + 1
 }
-corrplot(group_ref,tl.col = "black",tl.srt = 45,is.corr = FALSE,cl.lim=c(0,1300))
+corrplot(group_ref,tl.col = "black",tl.srt = 45,is.corr = FALSE,cl.lim=c(0,1500))
 
 #t-type distribution (Fig 2A)
 #e-features NMA

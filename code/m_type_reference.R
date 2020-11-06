@@ -39,6 +39,8 @@ ef_naomit = na.omit(ef_naomit)
 
 match = match[match$transcriptomics_sample_id %in% ef_naomit$session_idg,]
 match = match[match$dendrite_type %in% c("spiny","aspiny"),]
+match = rbind(match[match$dendrite_type == "spiny",],
+              match[match$genotype %in% c("Lamp5","Pvalb","Serpinf1","Sncg","Sst","Vip") & match$dendrite_type == "aspiny",])
 
 cellnames = match$transcriptomics_sample_id
 ef = ef_naomit[,-which(names(ef_naomit)=="session_idg")];
@@ -54,7 +56,8 @@ genenames = na.omit(rownames(gf_org)[match(genenames,toupper(rownames(gf_org)))]
 gf = gf_org[intersect(genenames,rownames(gf_org)),cellnames]
 
 dendrite_type = sapply(cellnames,FUN = function(x){match$dendrite_type[match$transcriptomics_sample_id==x]})
-
+n = nrow(ef)
+method = c('linear manifold','cca','manifold warping','nonlinear manifold aln','nonlinear manifold warp')
 #NMA
 NMA_res = Dim_red(ef,gf,method = method[4],cellnames =cellnames,d=3L,k_NN=2L,k_medoid=5L)
 NMA_res_e = NMA_res[NMA_res$data=="Ephys",]
