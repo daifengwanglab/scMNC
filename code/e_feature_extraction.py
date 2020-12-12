@@ -39,5 +39,5 @@ for file_out in files_out:
         ID.append(file_in)
         print(path_in + "\\" +file_in)
 res["ID"] = ID
-res.to_csv("../data/ef.csv",index=False,sep=',')
+res.to_csv("../data/efeatures.csv",index=False,sep=',')
 
