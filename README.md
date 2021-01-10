@@ -5,6 +5,3 @@ Recent single-cell multi-modal data reveals different characteristics of single 
 
 ## Figures
 ![alt text](https://github.com/daifengwanglab/scMNC/blob/main/figure/figure%201.png)
-
-![alt text](https://github.com/daifengwanglab/scMNC/blob/main/figure/figure%202.png)
-![alt text](https://github.com/daifengwanglab/scMNC/blob/main/figure/figure%203.png)
