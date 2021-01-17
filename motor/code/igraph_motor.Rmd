@@ -1,7 +1,6 @@
 ---
 title: "igraph_network"
 author: "Jiawei Huang"
-date: "2021年1月16日"
 output: html_document
 ---
 
