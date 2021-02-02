@@ -26,26 +26,28 @@ Several packages or softwares are needed for the whole analysis.
 
 - `g:Profiler` A web server for functional enrichment analysis. Available at https://biit.cs.ut.ee/gprofiler/gost.
 
-## 112 Demo data: to begin
+## Demo for aligning single cell multi-modal data
 
-You can get familiar with our analysis process through the 112 single cell patch-seq data from visual cortex, which could be accessed through `demo_102_visual_cortex/code/`. This code performs dimensional reduction on single-cell electrophysiological data and gene expression with 3 methods: Nonlinear manifold alignment (NMA), Canonical correspondence analysis (CCA) and Principal component analysis (PCA). The total running time of this demo should be less than 5 minutes.
+A demo for aligning single-cell multi-modal data is available at `demo_102_visual_cortex/` for a Patch-seq dataset (112 cells) in the mouse visual cortex \cite{xx}. The input data includes the gene expression levels and electrophysiological features of these cells in a rda file. Also, we provide a list of neuronal marker genes as select gene features. The code performs dimensional reduction on single-cell electrophysiological data and gene expression with three major methods: Nonlinear manifold alignment (NMA), Canonical correspondence analysis (CCA) and Principal component analysis (PCA).  The expected output includes the visualization of the latent space after each alignment method. The total running time of this demo was less than 5 minutes on a local laptop.
 
-## Mouse Visual Cortex
+## Instructions for use for other datasets
 
-The data and code for visual cortex analysis is at `mouse_visual_cortex/`. The original data is too large in size that can not be uploaded to github. To get the original data, you can go to http://data.nemoarchive.org/other/grant/AIBS_patchseq/transcriptome/scell/SMARTseq/processed/analysis/20200611/ to get the gene expression and metadata, among which the gene expression should be `20200513_Mouse_PatchSeq_Release_count.v2.csv.tar`. You can get the electrophysiological data through the following command. 
+### 3654 cells in the mouse visual cortex
+
+The data and codes for analyzing a large single-cell multi-modal data in the mouse visual cortex analysis (N=3654 cells) is at `mouse_visual_cortex/`. The raw gene expression data, `20200513_Mouse_PatchSeq_Release_count.v2.csv.tar`, along with metadata is available at http://data.nemoarchive.org/other/grant/AIBS_patchseq/transcriptome/scell/SMARTseq/processed/analysis/20200611/ . Also, the raw electrophysiological data can be obtained through the following command.
 
 ```python
 pip install dandi
 dandi download https://dandiarchive.org/dandiset/000020
 ```
 
-After downloading the raw data (around 112 GB), you can extract the electrophysiological features by `extracting_e_features_visual.py`. Alternatively, you can just use the cleaned data by `data_clean_visual.R` that stored in `visual_data_filtered.rda`, which contains gene expression, electrophysiological features and cell type labels for 3654 cells.
+After downloading the raw electrophysiological data (around 112 GB), we can extract the electrophysiological features by the python code, `extracting_e_features_visual.py`. Alternatively, you can directly use the processed data, `visual_data_filtered.rda by data_clean_visual.R`, which include processed gene expression, select electrophysiological features (e-features) and cell type information for all 3654 cells.
 
-The nonlinear manifold alignment and clustering procedure is coded in `dimreduction_clustering_visual.Rmd`, which outputs two tables representating two features' latent space. The code also renders the differential expressed genes and cluster specific e-features. `regulatory_network_visual.R` Get the TF genes and gene regulatory network for specific clusters, note that this code should be run on a *linux* system. `predicting_efeatures_visual.rmd` predict the cluster specific e-features through differential expressed genes, it will render a plot containing the $R^2$ for e-features prediction models.
+The codes for nonlinear manifold alignment (NMA) and clustering is available in `dimreduction_clustering_visual.Rmd`, which outputs two tables representing the NMA's latent spaces of genes and e-features. The codes for identifying the differential expressed genes and cluster-specific e-features are also available in `dimreduction_clustering_visual.Rmd`. The code file, `regulatory_network_visual.R` predicts gene regulatory network for cross-modal cell clusters, and should be run on linux. The code file, `predicting_efeatures_visual.rmd` predicts the cluster specific e-features by the method for predicting differential expressed genes, and also generates a plot showing the $R^2$ for e-features prediction models.
 
-Several plots are made through the following code: `igraph_visual.Rmd` gets the igraph for network in each cluster; `bibiplot_visual.ipynb` and `regression_on_latent_space_CV_visual.ipynb` draw the bibiplot and fit regression models on gene expression and e-feature latent space; `network_plot_visual.Rmd` draws the correlation of a special case of three marker genes in cluster 1: "Irf5","Spi1" and "Atf3"; `mtype_plot_visual.r` draws the m-type trajectory on latent space when adding 142 spiny (excitatory) cells into analysis.
+Others plots can be generated through the following codes files: `igraph_visual.Rmd` visualizes the gene regulatory network by igraph for each cluster; `bibiplot_visual.ipynb` and `regression_on_latent_space_CV_visual.ipynb` generate the bibiplots and fit the regression models for the gene expression and e-feature latent spaces; `network_plot_visual.Rmd` visualizes the expression relationships and calculates the expression correlations of three marker genes in cluster 1: "Irf5","Spi1" and "Atf3"; `mtype_plot_visual.r` plots the m-type trajectory on the NMA's latent space after adding 142 spiny (excitatory) cells into the NMA alignment.
 
-## Mouse Visual Cortex
+### 1208 cells in the mouse motor cortex
 
-The motor cortex data is obtained from https://github.com/berenslab/mini-atlas. `m1_patchseq_exon_counts.csv` and `m1_patchseq_intron_counts.csv` contains the gene expression data, `m1_patchseq_ephys_features.csv` contains the e-features, and `m1_patchseq_meta_data.csv` is the meta data for cell types. The naming rule for motor code is similar to the visual cortex, so it would be easy to find what problem each code is dealing with.
+The single-cell multi-modal data in the mouse motor cortex (N=1208 cells) was obtained from https://github.com/berenslab/mini-atlas. We also include them in `mouse_motor_cortex/data/`. The codes for generating our results for this dataset are available in `mouse_motor_cortex/codes`, and the code file names follow the same naming strategy with the mouse visual cortex but replace the suffix by '_motor'.
 
