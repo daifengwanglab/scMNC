@@ -49,6 +49,3 @@ Several plots are made through the following code: `igraph_visual.Rmd` gets the 
 
 The motor cortex data is obtained from https://github.com/berenslab/mini-atlas. `m1_patchseq_exon_counts.csv` and `m1_patchseq_intron_counts.csv` contains the gene expression data, `m1_patchseq_ephys_features.csv` contains the e-features, and `m1_patchseq_meta_data.csv` is the meta data for cell types. The naming rule for motor code is similar to the visual cortex, so it would be easy to find what problem each code is dealing with.
 
-
-
-
