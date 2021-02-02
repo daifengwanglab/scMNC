@@ -10,7 +10,7 @@ Recent single-cell multi-modal data reveal different characteristics of single c
 
 The analysis is based on R 4.02, python 3.7 and several web based softwares. For the Single-Cell manifold alignment, GMM clustering and most follow up analysis, you will only need a standard computer with enough RAM to support the operations. For the gene regulatory network, a *Linux* system with 32 GB RAM and 32GB storage would be enough to support.
 
-## Installation guide
+## Package and software guide
 
 Several packages or softwares are needed for the whole analysis.
 
@@ -25,6 +25,10 @@ Several packages or softwares are needed for the whole analysis.
 - `igraph` (R package) or `cytoscape` (open source platform) to draw igraphs for cluster specific gene regulatory networks.
 
 - `g:Profiler` A web server for functional enrichment analysis. Available at https://biit.cs.ut.ee/gprofiler/gost.
+
+## 112 Demo data: to begin
+
+You can get familiar with our analysis process through the 112 single cell patch-seq data from visual cortex, which could be accessed through `demo_102_visual_cortex/code/`. This code performs dimensional reduction on single-cell electrophysiological data and gene expression with 3 methods: Nonlinear manifold alignment (NMA), Canonical correspondence analysis (CCA) and Principal component analysis (PCA). The total running time of this demo should be less than 5 minutes.
 
 
 
