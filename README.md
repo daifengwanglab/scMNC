@@ -45,7 +45,9 @@ The nonlinear manifold alignment and clustering procedure is coded in `dimreduct
 
 Several plots are made through the following code: `igraph_visual.Rmd` gets the igraph for network in each cluster; `bibiplot_visual.ipynb` and `regression_on_latent_space_CV_visual.ipynb` draw the bibiplot and fit regression models on gene expression and e-feature latent space; `network_plot_visual.Rmd` draws the correlation of a special case of three marker genes in cluster 1: "Irf5","Spi1" and "Atf3"; `mtype_plot_visual.r` draws the m-type trajectory on latent space when adding 142 spiny (excitatory) cells into analysis.
 
+## Mouse Visual Cortex
 
+The motor cortex data is obtained from https://github.com/berenslab/mini-atlas. `m1_patchseq_exon_counts.csv` and `m1_patchseq_intron_counts.csv` contains the gene expression data, `m1_patchseq_ephys_features.csv` contains the e-features, and `m1_patchseq_meta_data.csv` is the meta data for cell types. The naming rule for motor code is similar to the visual cortex, so it would be easy to find what problem each code is dealing with.
 
 
 
