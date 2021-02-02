@@ -26,11 +26,11 @@ Several packages or softwares are needed for the whole analysis.
 
 - `g:Profiler` A web server for functional enrichment analysis. It is available at https://biit.cs.ut.ee/gprofiler/gost.
 
-## Demo for aligning single cell multi-modal data
+## Demo for aligning single-cell multi-modal data
 
 A demo for aligning single-cell multi-modal data is available at `demo_112_visual_cortex/` for a Patch-seq dataset (112 cells) in the mouse visual cortex (https://github.com/berenslab/layer4). The input data includes the gene expression levels and electrophysiological features of these cells in a rda file. Also, we provide a list of neuronal marker genes as select gene features. The code performs dimensional reduction on single-cell electrophysiological data and gene expression with three major methods: Nonlinear manifold alignment (NMA), Canonical correspondence analysis (CCA) and Principal component analysis (PCA).  The expected output includes the visualization of the latent space after each alignment method. The total running time of this demo was less than 5 minutes on a local laptop.
 
-## Instructions for use for other datasets
+## Instructions for analyzing other datasets in the mouse brain
 
 ### 3654 cells in the mouse visual cortex
 
