@@ -19,6 +19,8 @@ library(dplyr)
 library(corrplot)
 library(readxl)
 library(cluster)
+library(rrr)
+library(Rtsne)
 
 Dim_red = function(edata,gdata,method,class,cellnames,d,k_NN,k_medoid){
   #e-feature
@@ -42,13 +44,81 @@ n = nrow(edata)
 method = c('linear manifold','cca','manifold warping','nonlinear manifold aln','nonlinear manifold warp')
 ```
 
+### hyperparameter tuning
+
+```{r}
+#png(filename = paste0("../figure/","ttype_visual_(NMA).png"),width = 500, height = 500)
+# may take long, jump if don't want to run this chunk
+d = c(3L,5L,8L,10L)
+par(mfrow=c(2,2))
+distl = list()
+j = 0
+for (di in d){
+  dist = c()
+  for (i in 1:5){
+    res = Dim_red(edata,gdata,class=t_type,cellnames =cellnames,method = method[i],d=di,k_NN=2L,k_medoid=5L)
+    res_e.sd = apply(res[res$data=="Ephys",2:(di+1)],2,scale)
+    res_t.sd = apply(res[res$data=="Expr",2:(di+1)],2,scale)
+    for (k in 1:n){
+      dist = c(dist,sqrt(sum((res_e.sd[k,]-res_t.sd[k,])^2)))
+    }
+  }
+  
+  ### PCA ###
+  #clustering only use gfs
+  PCA_res_t = prcomp(t(log10(gdata+1)),scale=T,rank=di,retx=T)$x
+  PCA_res_t.sd = apply(PCA_res_t[,1:di],2,scale)
+  #clustering only use efs
+  PCA_res_e = prcomp(edata,scale=T,rank=di,retx=T)$x
+  PCA_res_e.sd = apply(PCA_res_e[,1:di],2,scale)
+  for (k in 1:n){
+    dist = c(dist,sqrt(sum((PCA_res_e.sd[k,1:di]-PCA_res_t.sd[k,1:di])^2)))
+  }
+  
+  ### RRR ###
+  RRR_res = rrr(t(log10(gdata+1)),edata, type = "identity", rank = di, k = 0)
+  RRR_res_e = as.matrix(edata) %*% RRR_res$A
+  RRR_res_t = as.matrix(t(log10(gdata+1))) %*% t(RRR_res$B)
+  RRR_res_e.sd = apply(RRR_res_e,2,scale)
+  RRR_res_t.sd = apply(RRR_res_t,2,scale)
+  for (k in 1:n){
+    dist = c(dist,sqrt(sum((RRR_res_e.sd[k,1:di]-RRR_res_t.sd[k,1:di])^2)))
+  }
+  
+  #Figure 1B
+  #boxplot
+  distmat = data.frame(matrix(as.numeric(dist),nrow = nrow(edata)))
+  colnames(distmat) = c('LM','CCA','MW','NMA','NMW',"PCA","RRR")
+  distmat = distmat[,c(-5)]
+  distmat = melt(distmat,variable.name = "Method", value.name = "Pairwise distance between g & e features")
+  boxplot(`Pairwise distance between g & e features`~Method,data=distmat,
+          ylab="Pairwise distance between G & E features", xlab="",outline =F,col ="white")
+  tapply(distmat$`Pairwise distance between g & e features`,INDEX = distmat$Method,FUN = mean)
+  j = j +1
+  distl[[j]] = dist
+
+}
+
+par(mfrow=c(2,2))
+for (i in 1:4){
+  distmat = data.frame(matrix(as.numeric(distl[[i]]),nrow = nrow(edata)))
+  colnames(distmat) = c('LM','CCA','MW','NMA','NMW',"PCA","RRR")
+  distmat = distmat[,c(-5)]
+  distmat = melt(distmat,variable.name = "Method", value.name = "Pairwise distance between g & e features")
+  boxplot(`Pairwise distance between g & e features`~Method,data=distmat,ylim = c(0,7),
+          ylab="Pairwise distance between G & E features", xlab=paste0("d = ",d[i]),outline =F,col ="white")
+  tapply(distmat$`Pairwise distance between g & e features`,INDEX = distmat$Method,FUN = mean)
+}
+```
+
+
 ### Boxplot for pairwise distance
 
 ```{r}
 # may take long, jump if don't want to run this chunk
 dist =c()
 for (i in 1:5){
-  res = Dim_red(edata,gdata,class=t_type,cellnames =cellnames,method = method[i],d=20L,k_NN=2L,k_medoid=5L)
+  res = Dim_red(edata,gdata,class=t_type,cellnames =cellnames,method = method[i],d=3L,k_NN=2L,k_medoid=5L)
   res_e.sd = apply(res[res$data=="Ephys",2:4],2,scale)
   res_t.sd = apply(res[res$data=="Expr",2:4],2,scale)
   for (k in 1:n){
@@ -69,10 +139,44 @@ for (k in 1:n){
   dist = c(dist,sqrt(sum((PCA_res_e.sd[k,1:3]-PCA_res_t.sd[k,1:3])^2)))
 }
 
+### RRR ###
+RRR_res = rrr(t(log10(gdata+1)),edata, type = "identity", rank = 3, k = 0)
+RRR_res_e = as.matrix(edata) %*% RRR_res$A
+RRR_res_t = as.matrix(t(log10(gdata+1))) %*% t(RRR_res$B)
+RRR_res_e.sd = apply(RRR_res_e,2,scale)
+RRR_res_t.sd = apply(RRR_res_t,2,scale)
+for (k in 1:n){
+  dist = c(dist,sqrt(sum((RRR_res_e.sd[k,1:3]-RRR_res_t.sd[k,1:3])^2)))
+}
+
+### tSNE ###
+tSNE_res = Rtsne(edata[!duplicated(edata),], dims = 3, initial_dims = 50, perplexity = 30, theta = 0.5)$Y
+tSNE_res_e = data.frame(Val0 = as.numeric(tSNE_res[,1]),Val1 = as.numeric(tSNE_res[,2]),Val2 = as.numeric(tSNE_res[,3]))
+tSNE_res = Rtsne(t(log10(gdata+1))[!duplicated(edata),], dims = 3, initial_dims = 50, perplexity = 30, theta = 0.5)$Y
+tSNE_res_t = data.frame(Val0 = as.numeric(tSNE_res[,1]),Val1 = as.numeric(tSNE_res[,2]),Val2 = as.numeric(tSNE_res[,3]))
+tSNE_res_e.sd = apply(tSNE_res_e,2,scale)
+tSNE_res_t.sd = apply(tSNE_res_t,2,scale)
+for (k in 1:3653){
+  dist = c(dist,sqrt(sum((tSNE_res_e.sd[k,1:3]-tSNE_res_t.sd[k,1:3])^2)))
+}
+
+### MMD-MA ###
+efeature_MMD = read.table("../mmd-ma/efeature_MMD.tsv",header = F)
+gene_MMD = read.table("../mmd-ma/gene_MMD.tsv",header = F)
+alpha = read.csv("../mmd-ma/alpha_hat_50_4300.txt",sep = " ",header = F)
+beta = read.csv("../mmd-ma/beta_hat_50_4300.txt",sep = " ",header = F)
+MMD_res_t = as.matrix(efeature_MMD) %*% as.matrix(alpha)
+MMD_res_e = as.matrix(gene_MMD) %*% as.matrix(alpha)
+MMD_res_e.sd = apply(MMD_res_e,2,scale)
+MMD_res_t.sd = apply(MMD_res_t,2,scale)
+for (k in 1:n){
+  dist = c(dist,sqrt(sum((MMD_res_e.sd[k,1:3]-MMD_res_t.sd[k,1:3])^2)))
+}
+
 #Figure 1B
 #boxplot
 distmat = data.frame(matrix(as.numeric(dist),nrow = nrow(edata)))
-colnames(distmat) = c('LM','CCA','MW','NMA','NMW',"PCA")
+colnames(distmat) = c('LM','CCA','MW','NMA','NMW',"PCA","RRR","tSNE","MMD-MA")
 distmat = distmat[,c(-5)]
 distmat = melt(distmat,variable.name = "Method", value.name = "Pairwise distance between g & e features")
 boxplot(`Pairwise distance between g & e features`~Method,data=distmat,
@@ -83,7 +187,7 @@ tapply(distmat$`Pairwise distance between g & e features`,INDEX = distmat$Method
 ### Alignment using NMA,CCA and PCA
 
 ```{r}
-### MA ###
+### NMA ###
 NMA_res = Dim_red(edata,gdata,method = method[4],class=t_type,cellnames =cellnames,d=20L,k_NN=2L,k_medoid=5L)
 NMA_res_e = NMA_res[NMA_res$data=="Ephys",]
 NMA_res_t= NMA_res[NMA_res$data=="Expr",]
@@ -99,6 +203,14 @@ PCA_res_t = data.frame(Val0 = as.numeric(PCA_res_t[,1]),Val1 = as.numeric(PCA_re
 PCA_res_e = prcomp(edata,scale=T,rank=20,retx=T)$x
 PCA_res_e = data.frame(Val0 = as.numeric(PCA_res_e[,1]),Val1 = as.numeric(PCA_res_e[,2]),Val2 = as.numeric(PCA_res_e[,3]))
 PCA_res = rbind(PCA_res_e[,1:3],PCA_res_t[,1:3])
+### tSNE ###
+tSNE_res = Rtsne(edata[!duplicated(edata),], dims = 3, initial_dims = 50, perplexity = 30, theta = 0.5)$Y
+tSNE_res_e = data.frame(Val0 = as.numeric(tSNE_res[,1]),Val1 = as.numeric(tSNE_res[,2]),Val2 = as.numeric(tSNE_res[,3]))
+### RRR ###
+RRR_res = rrr(t(log10(gdata+1)),edata, type = "identity", rank = 3, k = 0)
+RRR_res_e = as.matrix(edata) %*% RRR_res$A
+RRR_res_t = as.matrix(t(gdata)) %*% t(RRR_res$B)
+
 head(NMA_res)
 #Fig 1C
 library(plot3D)
@@ -124,6 +236,13 @@ points3D(x=PCA_plot[,1], y=PCA_plot[,2], z=PCA_plot[,3],pch = 19,cex=0.5,bty="g"
          xlab = "",ylab = "",zlab = "",box=T, axes=F,
          colvar = as.numeric(mapvalues(NMA_res$data,names(table(NMA_res$data)),1:2)),col = alpha(brewer.pal(6,"Spectral")[c(1,6)],c(0.8,0.8)),
          colkey = F)
+#RRR
+RRR_plot = rbind(apply(RRR_res_e,2,scale),apply(RRR_res_t,2,scale))
+RRR_plot[1:n,1] = RRR_plot[1:n,1] + 0.5
+points3D(x=RRR_plot[,1], y=RRR_plot[,2], z=RRR_plot[,3],pch = 19,cex=0.5,bty="g",ticktype = "detailed", theta = 40, phi = 10,
+         xlab = "",ylab = "",zlab = "",box=T, axes=F,
+         colvar = as.numeric(mapvalues(NMA_res$data,names(table(NMA_res$data)),1:2)),col = alpha(brewer.pal(6,"Spectral")[c(1,6)],c(0.8,0.8)),
+         colkey = F)
 ```
 
 
@@ -144,9 +263,13 @@ gmm_cca = GMM(cbind(CCA_res[1:n,2:4],CCA_res[(n+1):(2*n),2:4]), 5, dist = "eucl_
 gmm_cluster_cca = predict_GMM(cbind(CCA_res[1:n,2:4],CCA_res[(n+1):(2*n),2:4]),
                           gmm_cca$centroids, gmm_cca$covariance_matrices, gmm_cca$weights)$cluster_labels +1
 #PCA cluster
-gmm_pca = GMM(cbind(PCA_res_e,PCA_res_t), 5, dist = "eucl_dist", "random_subset", 10, 50,seed=1)
-gmm_cluster_pca = predict_GMM(cbind(PCA_res_e,PCA_res_t),
-                              gmm_pca$centroids, gmm_pca$covariance_matrices,gmm_pca$weights)$cluster_labels +1
+gmm_pca_e = GMM(PCA_res_e, 5, dist = "eucl_dist", "random_subset", 10, 50,seed=1)
+gmm_cluster_pca_e = predict_GMM(PCA_res_e,
+                              gmm_pca_e$centroids, gmm_pca_e$covariance_matrices,gmm_pca_e$weights)$cluster_labels +1
+
+gmm_pca_t = GMM(PCA_res_t, 5, dist = "eucl_dist", "random_subset", 10, 50,seed=1)
+gmm_cluster_pca_t = predict_GMM(PCA_res_t,
+                              gmm_pca_t$centroids, gmm_pca_t$covariance_matrices,gmm_pca_t$weights)$cluster_labels +1
 
 #t-type & cluster (Fig S5)
 group_ref = matrix(0,ncol = 5,nrow = 6)
@@ -162,6 +285,15 @@ NMA_res_e = cbind(NMA_res_e,gmm_cluster)
 NMA_res_t = cbind(NMA_res_t,gmm_cluster)
 #write.csv(NMA_res_e,"../data/efeature_NMA.csv",row.names = FALSE)
 #write.csv(NMA_res_t,"../data/geneExp_NMA.csv",row.names = FALSE)
+
+#t-type & cluster (Fig S5)
+group_ref = matrix(0,ncol = 5,nrow = 6)
+rownames(group_ref) = names(table(t_type))
+colnames(group_ref) = factor(paste0("Cluster",1:5),levels = paste0("Cluster",1:5))
+for (i in 1:n){
+  group_ref[t_type[i],gmm_cluster_pca_e[i]] = group_ref[t_type[i],gmm_cluster_pca_e[i]] + 1
+}
+corrplot(group_ref,tl.col = "black",tl.srt = 45,is.corr = FALSE,cl.lim=c(0,1500))
 ```
 
 
@@ -174,7 +306,7 @@ NMA_res_t = cbind(NMA_res_t,gmm_cluster)
 #"#4DAF4A" Serpinf1 & exc t-types green
 col = alpha(c("#E41A1C","#377EB8","#984EA3","#FF7F00","#FFFF33","#a9a9a9"),0.8)
 colvar = as.numeric(mapvalues(t_type,c("Vip","Sst","Sncg","Pvalb","Lamp5","Serpinf1"),c(1:6)))
-
+colvar1 = as.numeric(mapvalues(t_type[!duplicated(edata)],c("Vip","Sst","Sncg","Pvalb","Lamp5","Serpinf1"),c(1:6)))
 #t-type distribution 
 #Figure 2A, 3A
 #e-features NMA
@@ -195,6 +327,21 @@ points3D(x=CCA_res_e$Val0, y=-CCA_res_e$Val1, z=CCA_res_e$Val2,pch = 19,cex=0.8,
          xlab = "",ylab = "",zlab = "",axes =F,
          colvar = colvar,col=col,
          colkey = F)
+#e-features tSNE
+png(filename = paste0("../","ttype_visual_(tSNE).png"),width = 500, height = 500)
+points3D(x=tSNE_res_e$Val0, y=tSNE_res_e$Val1, z=tSNE_res_e$Val2,pch = 19,cex=0.8,bty="g",ticktype = "detailed", theta = 40, phi = 10,
+         xlab = "",ylab = "",zlab = "",axes =F,
+         colvar = colvar1,col=col,
+         colkey = F)
+dev.off()
+#e-features RRR
+png(filename = paste0("../","ttype_visual_(RRR).png"),width = 500, height = 500)
+points3D(x=RRR_res_e[,1], y=RRR_res_e[,2], z=RRR_res_e[,3],pch = 19,cex=0.8,bty="g",ticktype = "detailed", theta = 40, phi = 10,
+         xlab = "",ylab = "",zlab = "",axes =F,
+         colvar = colvar,col=col,
+         colkey = F)
+dev.off()
+
 colkey(at = 1:6,clim = c(0.5,6.5),rev(col),clab = "t-type", 
        addlines = F, length = 0.5, width = 0.5,
        labels = c("Serpinf1","Lamp5","Pvalb","Sncg","Sst","Vip"))
@@ -279,7 +426,7 @@ for (i in colnames(edata)){
 ```{r}
 #Fig 2B
 silmat = data.frame(
-  PCA = silhouette(as.numeric(mapvalues(t_type,names(table(t_type)),1:6)), dist = dist(PCA_res_e[,1:3]))[,3],
+  RRR = silhouette(as.numeric(mapvalues(t_type,names(table(t_type)),1:6)), dist = dist(RRR_res_e[,1:3]))[,3],
   CCA = silhouette(as.numeric(mapvalues(t_type,names(table(t_type)),1:6)), dist = dist(CCA_res_e[,2:4]))[,3],
   NMA = silhouette(as.numeric(mapvalues(t_type,names(table(t_type)),1:6)), dist = dist(NMA_res_e[,2:4]))[,3]
 )
